@@ -1,0 +1,90 @@
+package Elementals
+	import Main
+	
+	int c=0
+	timer array timers
+	unit array units
+	effect sleepEffect
+	unit crab
+	
+	function crabDmg()
+		if GetUnitAbilityLevel(GetEventDamageSource(), 'A003') < 15
+			return
+
+		DisableTrigger(GetTriggeringTrigger())
+		
+		DestroyEffect(sleepEffect)
+		SetUnitOwner(crab, Player(PLAYER_NEUTRAL_AGGRESSIVE), true)
+		KillDestructable( gg_dest_YTpc_1526 )
+		KillDestructable( gg_dest_YTpc_1527 )
+		KillDestructable( gg_dest_YTpc_1528 )
+		KillDestructable( gg_dest_YTpc_1529 )
+		KillDestructable( gg_dest_YTpc_1530 )
+	
+	function setUnitAbil(unit u, integer id, integer lvl)
+		if GetUnitAbilityLevel(u, id) <= 0 and lvl > 0
+			UnitAddAbility(u, id)
+		if GetUnitAbilityLevel(u, id) > 0 and lvl <= 0
+			UnitRemoveAbility(u, id)
+		
+		SetUnitAbilityLevel(u, id, lvl)
+		
+	
+	function abort()
+		int i=0
+
+		while GetExpiredTimer() != timers[i]
+			i++
+
+		//IssuePointOrder(units[i], "move", GetUnitX(units[i])+1*CosBJ(GetUnitFacing(units[i])), GetUnitY(units[i])+1*SinBJ(GetUnitFacing(units[i])))
+		
+		setUnitAbil(units[i], 'A003', 0)
+	
+	function onDmg()
+		if GetEventDamage()==0
+			return
+			
+		int lv=1//GetUnitAbilityLevel(GetTriggerUnit(), 'A003') 
+		
+		if GetUnitAbilityLevel(GetEventDamageSource(), 'A003')==0
+			lv++
+		else
+			lv = lv + GetUnitAbilityLevel(GetEventDamageSource(), 'A003')
+
+		setUnitAbil(GetTriggerUnit(), 'A003', lv)
+		if IsUnitInGroup(GetEventDamageSource(), pengos)
+			IssuePointOrder(GetTriggerUnit(), "attackground", GetUnitX(GetEventDamageSource()), GetUnitY(GetEventDamageSource()))
+		
+		timer t=timers[GetUnitUserData(GetTriggerUnit())]
+		TimerStart(t, 3, false, function abort)
+
+	function dragEnum() returns boolean
+		if not (GetUnitTypeId(GetFilterUnit()) == 'n008')
+			return false
+
+		let t=CreateTrigger()
+		
+		TriggerAddAction(t, function onDmg)
+		TriggerRegisterUnitEvent(t, GetFilterUnit(), EVENT_UNIT_DAMAGED)
+		SetUnitPropWindow(GetFilterUnit(), 0)
+		
+	
+		c++
+		timers[c]=CreateTimer()
+		units[c]=GetFilterUnit()
+		SetUnitUserData(GetFilterUnit(), c)
+		
+		return true
+
+	init
+		let g=CreateGroup()
+		GroupEnumUnitsInRect(g, GetWorldBounds(), Condition(function dragEnum))
+		
+		crab=gg_unit_n009_0026
+		
+		sleepEffect = AddSpecialEffectTarget("Abilities\\Spells\\Undead\\Sleep\\SleepTarget.mdl", crab, "overhead")
+		let t=CreateTrigger()
+		TriggerAddAction(t, function crabDmg)
+		TriggerRegisterUnitEvent(t, crab, EVENT_UNIT_DAMAGED)
+		
+endpackage

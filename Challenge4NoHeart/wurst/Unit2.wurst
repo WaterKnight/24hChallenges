@@ -1,0 +1,17 @@
+package Unit2
+	hashtable table
+	
+	class Unit2
+		unit self
+		
+		//function getFromSelf(unit self) returns thistype
+			//return (LoadInteger(table, GetHandleId(self), 0) castTo thistype)
+		
+		//construct(int unitTypeId, player p, real x, real y, real ang)
+			//self = CreateUnit(p, unitTypeId, x, y, ang)
+			//SaveInteger(table, GetHandleId(self), 0, (this castTo int))
+		
+	init
+		table = InitHashtable()
+		
+endpackage

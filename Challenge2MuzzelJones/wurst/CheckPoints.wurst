@@ -1,0 +1,44 @@
+package CheckPoints
+	import Main
+	
+	trigger cpt1Trig
+	trigger cpt2Trig
+
+	real x
+	real y
+
+	function onDeath()
+		if not IsUnitInGroup(GetTriggerUnit(), pengos)
+			return
+		
+		TriggerSleepAction(5)
+		
+		ReviveHero(GetTriggerUnit(), x, y, true)
+		UnitAddItem(GetTriggerUnit(), CreateItem('I002', 0, 0))
+		
+		if GetLocalPlayer()==GetOwningPlayer(GetTriggerUnit())
+			PanCameraTo(x, y)
+
+	function cpt2()
+		DisableTrigger(GetTriggeringTrigger())
+		DisableTrigger(cpt1Trig)
+	
+	function cpt1()
+		DisableTrigger(GetTriggeringTrigger())
+		
+	init
+		cpt1Trig=CreateTrigger()
+		TriggerAddAction(cpt1Trig, function cpt1)
+		TriggerRegisterEnterRectSimple(cpt1Trig, gg_rct_checkpt1)
+
+		cpt2Trig=CreateTrigger()
+		TriggerAddAction(cpt2Trig, function cpt1)
+		TriggerRegisterEnterRectSimple(cpt1Trig, gg_rct_checkpt2)
+		
+		x = GetRectCenterX(gg_rct_checkpt0)
+		y = GetRectCenterY(gg_rct_checkpt0)
+
+		let t=CreateTrigger()
+		TriggerAddAction(t, function onDeath)
+		TriggerRegisterAnyUnitEventBJ(t, EVENT_PLAYER_UNIT_DEATH)
+endpackage

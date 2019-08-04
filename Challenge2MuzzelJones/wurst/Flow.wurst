@@ -1,0 +1,39 @@
+package Flow
+	import Main
+	
+	group ENUM_GROUP1
+	group ENUM_GROUP2
+	group ENUM_GROUP3
+	real UPDATE_TIME=0.03125
+	
+	function checkPen() returns bool
+		if not IsUnitInGroup(GetFilterUnit(), pengos)
+			return false
+
+		return true
+
+	function abc()
+		real dX = GetUnitX(GetEnumUnit()) - GetRectCenterX(gg_rct_flowTarget) 
+		real dY = GetUnitY(GetEnumUnit()) - GetRectCenterY(gg_rct_flowTarget) 
+		real speed = 1/Pow(SquareRoot(dY*dY+dX*dX), 2)*8000*8000*UPDATE_TIME
+		real ang=Atan2(dY, dX)-bj_PI
+
+		SetUnitX(GetEnumUnit(), GetUnitX(GetEnumUnit())+speed*Cos(ang))
+		SetUnitY(GetEnumUnit(), GetUnitY(GetEnumUnit())+speed*Sin(ang))
+
+	function periodic()
+		GroupEnumUnitsInRect(ENUM_GROUP1, gg_rct_flow1, Condition(function checkPen))
+		GroupEnumUnitsInRect(ENUM_GROUP2, gg_rct_flow2, Condition(function checkPen))
+		
+		GroupClear(ENUM_GROUP3)
+		GroupAddGroup(ENUM_GROUP1, ENUM_GROUP3)
+		GroupAddGroup(ENUM_GROUP2, ENUM_GROUP3)
+		
+		ForGroup(ENUM_GROUP3, function abc)
+		
+	init
+		ENUM_GROUP1=CreateGroup()
+		ENUM_GROUP2=CreateGroup()
+		ENUM_GROUP3=CreateGroup()
+		TimerStart(CreateTimer(), UPDATE_TIME, true, function periodic)
+endpackage

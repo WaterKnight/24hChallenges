@@ -1,0 +1,62 @@
+package Round
+import Entity
+import Hero
+import CreepSpawn
+import CreepNode
+
+
+int roundCount = 0
+boolean gameRunning = false
+boolean warmupRunning = false
+
+constant real WARUMP_TIME = 20
+
+trigger warmupColorTrig 
+trigger warmupBWTrig 
+
+public function startNewRound()
+	if gameRunning
+		printError("Trying to start new Round while Round in progress")
+		return
+	if roundCount > 0
+		cleanupArena()
+	startWarmup()
+	roundCount++
+
+function startWarmup()
+	warmupRunning = true
+	warmupColorTrig = CreateTrigger()
+	warmupColorTrig.addAction(function leaveWarmupColor)
+	warmupColorTrig.registerRectLeaveEventSource(gg_rct_warmupColor)
+	warmupBWTrig = CreateTrigger()
+	warmupBWTrig.addAction(function leaveWarmupBW)
+	warmupBWTrig.registerRectLeaveEventSource(gg_rct_warmupBW)
+	print("|cff5A835A[Start] |r- 20 second Warmup has started")
+	getTimer().start(WARUMP_TIME, function finishWarmup)
+	
+function finishWarmup()
+	warmupColorTrig.destr()
+	warmupBWTrig.destr()
+	startAllSpawners()
+	print("|cffFF9421[Done] |r- Warmup Finished!")
+
+function cleanupArena()
+	
+
+function leaveWarmupColor()
+	let u = GetTriggerUnit()
+	let data = u.getUserData() castTo Entity
+	if data instanceof Hero
+		DisplayTextToPlayer(data.owner,0,0,"|cff639C31You cannot leave your base during warmup")
+		addEffect("Abilities\\Weapons\\Bolt\\BoltImpact.mdl", data.pos).destr()
+		data.setVel(data.pos.angleTo2d(color_Main).toVec(20).withZ(2))
+		
+function leaveWarmupBW()
+	let u = GetTriggerUnit()
+	let data = u.getUserData() castTo Entity
+	if data instanceof Hero
+		DisplayTextToPlayer(data.owner,0,0,"|cff639C31You cannot leave your base during warmup")
+		addEffect("Abilities\\Weapons\\Bolt\\BoltImpact.mdl", data.pos).destr()
+		data.setVel(data.pos.angleTo2d(bw_Main).toVec(20).withZ(2))
+			
+	

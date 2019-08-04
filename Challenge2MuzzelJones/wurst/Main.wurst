@@ -1,0 +1,173 @@
+package Main
+	import SealRide
+
+	public unit adrian
+	public unit cheffe
+	public unit bert
+	public unit bandana
+	public unit chris
+	public unit shades
+	public unit starmy
+
+	public unit tux
+	public unit mappo
+	public unit grandpa
+	public unit no1
+	public unit muzzel
+
+	public unit merosImage
+
+	camerasetup signCam
+	public group pengos
+
+	rect base_sight
+	rect base_sight2
+
+	bool speechTurnedOn=false
+
+	function grantFish_Enum()
+		UnitAddItem(GetEnumUnit(), CreateItem('I002', 0, 0))
+
+	function grantFish()
+		ForGroup(pengos, function grantFish_Enum)
+
+	public function speechOn()
+		speechTurnedOn=true
+		ShowInterface(false, 0.5)
+		EnableUserControl(false)
+
+	public function speechOff()
+		speechTurnedOn=false
+		ShowInterface(true, 0.5)
+		EnableUserControl(true)
+
+	public function speech(unit sender, string text, real duration)
+		AddIndicator(sender, 255, 255, 255, 255)
+		if speechTurnedOn
+			SetCinematicScene(GetUnitTypeId(sender), GetPlayerColor(GetOwningPlayer(sender)), GetUnitName(sender), text, duration+5, duration+5)
+		else
+			DisplayTextToPlayer(GetLocalPlayer(), 0, 0, "|cffffcc00" + GetUnitName(sender) + "|r: " + text)
+		TriggerSleepAction(duration)
+
+	function addAura()
+		AddSpecialEffectTarget("war3mapImported\\GeneralHeroGlow.mdx", GetEnumUnit(), "origin")
+		SetUnitColor(GetEnumUnit(), GetPlayerColor(GetOwningPlayer(GetEnumUnit())))
+
+	function start()
+		let q = CreateQuest()
+
+		QuestSetTitle(q, "Credits")
+		QuestSetDescription(q, "Credits:\nHats: Lord-T-Rex, RaidonGod, xXMephistoXx, Deolrin, Chriz., imforfun, Sin'dorei300")
+		
+		adrian = gg_unit_N00M_0002
+		AddSpecialEffectTarget("war3mapImported\\PirateHat.MDX", adrian, "head")
+		cheffe = gg_unit_N00P_0005
+		AddSpecialEffectTarget("war3mapImported\\ChefsHat.mdx", cheffe, "head")
+		bert = gg_unit_N00O_0004
+		AddSpecialEffectTarget("war3mapImported\\Hat.mdx", bert, "head")
+		bandana = gg_unit_N00N_0003
+		AddSpecialEffectTarget("war3mapImported\\Bandana.MDX", bandana, "head")
+		chris = gg_unit_N00Q_0006
+		AddSpecialEffectTarget("war3mapImported\\SantaHat.mdx", chris, "head")
+		shades = gg_unit_N00R_0007
+		AddSpecialEffectTarget("war3mapImported\\Shades.mdx", shades, "head")
+		starmy = gg_unit_N00S_0008
+		AddSpecialEffectTarget("war3mapImported\\MagicHat.MDX", starmy, "head")
+
+		tux = gg_unit_N00W_0112
+		mappo = gg_unit_N00X_0114
+		grandpa = gg_unit_N00T_0113
+		no1 = gg_unit_N00U_0110
+		muzzel = gg_unit_N00V_0111
+		AddSpecialEffectTarget("war3mapImported\\HappyCockroach'sHelm.mdx", muzzel, "head")
+		
+		pengos = CreateGroup()
+		
+		GroupAddUnit(pengos, adrian)
+		GroupAddUnit(pengos, cheffe)
+		GroupAddUnit(pengos, bert)
+		GroupAddUnit(pengos, bandana)
+		GroupAddUnit(pengos, chris)
+		GroupAddUnit(pengos, shades)
+		GroupAddUnit(pengos, starmy)
+		
+		GroupAddUnit(pengos, tux)
+		GroupAddUnit(pengos, mappo)
+		GroupAddUnit(pengos, grandpa)
+		GroupAddUnit(pengos, no1)
+		GroupAddUnit(pengos, muzzel)
+		
+		ForGroup(pengos, function addAura)
+		
+		grantFish()
+		
+		signCam = gg_cam_Camera_001
+		
+		base_sight = gg_rct_base_sight
+		base_sight2 = gg_rct_base_sight2
+		
+		CreateFogModifierRect(Player(0), FOG_OF_WAR_VISIBLE, base_sight, true, true)
+		CreateFogModifierRect(Player(0), FOG_OF_WAR_VISIBLE, base_sight2, true, true)
+		
+		FogEnable(false)
+
+		let skipFirst = false
+		
+		if not skipFirst
+			CinematicFilterGenericBJ( 0.01, BLEND_MODE_BLEND, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 100, 100, 100, 100, 0 )
+
+			TriggerSleepAction(1)			
+			speechOn()		
+			TriggerSleepAction(1)
+		
+			speech(bandana, "This has to be it, capt'n", 3)
+			speech(adrian, "Alright. Take in the sails, unload a tent and something to beak in, we are going on shore.", 8)
+			speech(cheffe, "When we find the treasure, I will finally be able to cook something decent again.", 8)
+			
+			CinematicFilterGenericBJ( 2, BLEND_MODE_BLEND, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 100, 100, 100, 0, 0, 0, 0, 100 )
+			
+			TriggerSleepAction(2)
+			
+			CameraSetupApplyForceDuration(gg_cam_Camera_002, true, 1.)
+			
+			speech(bert, "This is not snow at all :(", 3)
+			
+			CameraSetupApplyForceDuration(signCam, true, 6.)
+			
+			speech(shades, "yo capt'n, check this out", 3)
+			
+			speech(starmy, "It's the sacred fish marking the entrance to Sitnalta, it points into the cave.", 6)
+			
+			CameraSetupApplyForceDuration(gg_cam_Camera_003, true, 1.)
+			
+			speech(chris, "And now? Do we advance by fin? The ship for sure is not suited for this narrow underground way.", 8.)
+			
+			speech(adrian, "We use the seal boat, it is equipped with headlights. Else it would be too dark anyway and we do not know what dangers await us.", 10)
+			
+			CameraSetupApplyForceDuration(gg_cam_Camera_002, true, 1.)
+			
+			speech(bert, "nom nom *eating fish*.. I like the seal boat :)", 4)
+			
+			speech(adrian, "Yes, also bring some proviant ~~", 4)
+	
+			ResetToGameCamera(5)
+
+			speechOff()
+			TriggerSleepAction(5)
+		else
+			ShowInterface(true, 1)
+
+		FogEnable(true)
+
+		startSeal() 
+
+		merosImage = gg_unit_H000_0011
+
+		SetUnitVertexColor(merosImage, 255, 255, 255, 127)
+		SetUnitInvulnerable(merosImage, true)
+	init
+		trigger t = CreateTrigger()
+		TriggerAddAction(t, function start)
+		TriggerExecute(t)
+		
+endpackage

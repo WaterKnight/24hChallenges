@@ -1,0 +1,23 @@
+package SnapDragons
+	function onAttack()
+		if not (GetUnitTypeId(GetAttacker()) == 'n00A')
+			return
+
+		IssuePointOrder(GetAttacker(), "carrionswarm", GetUnitX(GetTriggerUnit()), GetUnitY(GetTriggerUnit()))
+
+	function dragEnum() returns boolean
+		if not (GetUnitTypeId(GetFilterUnit()) == 'n00A')
+			return false
+
+		SetUnitPropWindow(GetFilterUnit(), 0)
+		return true
+
+	init
+		let g=CreateGroup()
+		GroupEnumUnitsInRect(g, GetWorldBounds(), Condition(function dragEnum))
+		
+		let t=CreateTrigger()
+		TriggerAddAction(t, function onAttack)
+		TriggerRegisterAnyUnitEventBJ(t, EVENT_PLAYER_UNIT_ATTACKED) 
+
+endpackage

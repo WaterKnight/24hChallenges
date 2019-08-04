@@ -1,0 +1,23 @@
+package Test
+	import AbilityObjEditing
+
+	function abc(int g, int h, int i)
+		let a = new AbilityDefinition('A005', 'abcd')
+		a.setName("Wurst Bolt2"+g.toString()+h.toString()+i.toString())
+		print("lol")
+
+	@compiletime function foo()
+		abc(1, 2, 3)
+    
+	function c()
+		TriggerSleepAction(2)
+		DisplayTextToPlayer(GetLocalPlayer(), 0, 0, GetObjectName('A005'))
+
+	function b()
+		let t=CreateTrigger()
+		TriggerAddAction(t, function c)
+		TriggerExecute(t)
+
+	init
+		b()
+endpackage

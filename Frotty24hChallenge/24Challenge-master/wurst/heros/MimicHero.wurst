@@ -1,0 +1,42 @@
+package MimicHero
+import PreloadList
+import public Hero
+import MirrorRocket
+import DummyCaster
+import Ring
+
+constant int MIRROR_ROCKET_ID = 'A000'
+constant int REVERSE_ROUTING_ID = 'A001'
+constant int FLIPCIRCLE_ID = 'A003'
+constant int RR_DUMMY_ID = 'A002'
+public constant MIMIC_HERO_ID = 'H002'
+
+
+
+public class Mimic extends Hero
+	vec2 rr_temp
+	
+	construct(vec3 pos, player owner)
+		super(pos, createUnit(owner, MIMIC_HERO_ID, pos, angle(0)))
+		
+	override function onCast(int id, vec2 tpos, unit target, int lvl)
+		switch id
+			case MIRROR_ROCKET_ID
+				new MirrorRocket(pos+ vec3(0,0,50), 40., actor, 8., 2. + 2. * lvl, actor.getFacingAngle()+ angle(PI), "Abilities\\Weapons\\IllidanMissile\\IllidanMissile.mdl", 200. + 60*lvl )
+			case REVERSE_ROUTING_ID
+				rr_temp = tpos
+			case FLIPCIRCLE_ID
+				new Ring( vec3(tpos.x,tpos.y,pos.z+40), 200. + lvl * 50 , owner , angle(0), "", lvl)
+			default
+				
+	override function onSpellEndCast(int id, int lvl)
+		switch id
+			case REVERSE_ROUTING_ID
+				let dum = new DummyCaster(RR_DUMMY_ID, "silence", owner, true)
+				dum.setLevel(lvl)
+				dum.castOnPoint(rr_temp)
+			default
+		
+init
+	addToPreload(MIMIC_HERO_ID, PreloadType.UNIT)
+	addToPreload(MIRROR_ROCKET_ID, PreloadType.SPELL)

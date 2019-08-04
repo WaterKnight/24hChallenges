@@ -1,0 +1,132 @@
+package SealRide
+	import Main
+	
+	unit seal
+
+	function merosImageScene()
+		DisableTrigger(GetTriggeringTrigger())
+		
+		speech(merosImage, "Greetings foreigners, who are you, what do you seek in here?", 8.)
+		speech(chris, "In for the loot", 5)
+		speech(adrian, "We seek the lost lands of Sitnalta, for it is said to be home of the legendary golden fish.", 10)
+		speech(merosImage, "Well, you have found what remains of Sitnalta. Take the pathway to my right and you will eventually reach it.", 11.)
+		speech(merosImage, "I was once one of the priestesses of this country, before the flood happened. Now I am but a mere ghost watching over this place.", 12.)
+		speech(merosImage, "About the fish... I think there was something like that among all the other treasures. Please help yourselves, it contains no value any longer.", 14.)
+
+		TriggerSleepAction(2)
+
+		DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Items\\AIil\\AIilTarget.mdl", GetUnitX(merosImage), GetUnitY(merosImage)))
+		RemoveUnit(merosImage)
+		KillDestructable( gg_dest_ZTd7_0270 )
+		
+		
+	
+	function caveEnding()
+		BJDebugMsg("cave ending")
+		DisableTrigger(GetTriggeringTrigger())
+		
+		speech(GetTriggerUnit(), "Hey, there's light in here, the sun shines through the cracks in the ceiling", 10.)
+	
+	function sightOn()
+		if not IsUnitInGroup(GetTriggerUnit(), pengos)
+			return
+			
+		UnitRemoveAbility(GetTriggerUnit(), 'A001')
+
+	function sightOff()
+		if not IsUnitInGroup(GetTriggerUnit(), pengos)
+			return
+		
+		UnitAddAbility(GetTriggerUnit(), 'A001')
+	
+	function ending()
+
+	function path7()
+		IssuePointOrder(seal, "move", GetRectCenterX(gg_rct_seal8), GetRectCenterY(gg_rct_seal8))
+
+	function path6()
+		IssuePointOrder(seal, "move", GetRectCenterX(gg_rct_seal7), GetRectCenterY(gg_rct_seal7))
+
+	function path5()
+		IssuePointOrder(seal, "move", GetRectCenterX(gg_rct_seal6), GetRectCenterY(gg_rct_seal6))
+
+	function path4()
+		IssuePointOrder(seal, "move", GetRectCenterX(gg_rct_seal5), GetRectCenterY(gg_rct_seal5))
+
+	function path3()
+		IssuePointOrder(seal, "move", GetRectCenterX(gg_rct_seal4), GetRectCenterY(gg_rct_seal4))
+
+	function path2()
+		IssuePointOrder(seal, "move", GetRectCenterX(gg_rct_seal3), GetRectCenterY(gg_rct_seal3))
+	
+	function path1()
+		IssuePointOrder(seal, "move", GetRectCenterX(gg_rct_seal2), GetRectCenterY(gg_rct_seal2))
+	
+	function shareSight()
+		UnitShareVision(seal, GetOwningPlayer(GetEnumUnit()), true)
+	
+	public function startSeal()
+		seal = gg_unit_n007_0013
+		
+		ForGroup(pengos, function shareSight)
+		
+		TriggerSleepAction(15)
+		
+		IssuePointOrder(seal, "move", GetRectCenterX(gg_rct_seal1), GetRectCenterY(gg_rct_seal1))
+		
+		trigger t = CreateTrigger()		
+		TriggerAddAction(t, function path1)
+		TriggerRegisterEnterRectSimple(t, gg_rct_seal1)
+
+		t = CreateTrigger()		
+		TriggerAddAction(t, function path2)
+		TriggerRegisterEnterRectSimple(t, gg_rct_seal2)
+
+		t = CreateTrigger()		
+		TriggerAddAction(t, function path3)
+		TriggerRegisterEnterRectSimple(t, gg_rct_seal3)
+		
+		t = CreateTrigger()		
+		TriggerAddAction(t, function path4)
+		TriggerRegisterEnterRectSimple(t, gg_rct_seal4)
+
+		t = CreateTrigger()		
+		TriggerAddAction(t, function path5)
+		TriggerRegisterEnterRectSimple(t, gg_rct_seal5)
+
+		t = CreateTrigger()		
+		TriggerAddAction(t, function path6)
+		TriggerRegisterEnterRectSimple(t, gg_rct_seal6)
+
+		t = CreateTrigger()		
+		TriggerAddAction(t, function path7)
+		TriggerRegisterEnterRectSimple(t, gg_rct_seal7)
+
+		t = CreateTrigger()		
+		TriggerAddAction(t, function ending)
+		TriggerRegisterEnterRectSimple(t, gg_rct_seal8)
+
+		t = CreateTrigger()
+		TriggerAddAction(t, function ending)
+		TriggerRegisterEnterRectSimple(t, gg_rct_seal8)
+
+		t = CreateTrigger()
+		TriggerAddAction(t, function sightOn)
+		TriggerRegisterLeaveRectSimple(t, gg_rct_cave1)
+		TriggerRegisterLeaveRectSimple(t, gg_rct_cave2)
+
+		t = CreateTrigger()
+		TriggerAddAction(t, function sightOff)
+		TriggerRegisterEnterRectSimple(t, gg_rct_cave1)
+		TriggerRegisterEnterRectSimple(t, gg_rct_cave2)
+
+		t = CreateTrigger()
+		TriggerAddAction(t, function caveEnding)
+		TriggerRegisterEnterRectSimple(t, gg_rct_caveEnd)
+
+		t = CreateTrigger()
+		TriggerAddAction(t, function merosImageScene)
+		TriggerRegisterEnterRectSimple(t, gg_rct_merosImage)
+
+endpackage
+

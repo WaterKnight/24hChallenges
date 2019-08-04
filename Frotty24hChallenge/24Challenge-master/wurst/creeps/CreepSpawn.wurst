@@ -1,0 +1,118 @@
+package CreepSpawn
+import CreepNode
+import Terrain
+import GameConstants
+import Creep
+
+
+public Spawner color_left_spawn
+public Spawner color_right_spawn
+public Spawner bw_left_spawn
+public Spawner bw_right_spawn
+
+constant int MELEE_ID = 'e000'
+constant int RANGED_ID = 'e003'
+
+constant code spawnUnitsCall = function Spawner.spawnUnits
+
+public class Spawner
+	vec3 pos
+	unit spawnDummy
+	CreepNode target
+	player owner
+	timer spawnTimer
+	int spawnCount = 0
+	int meleeCount = 4
+	int rangedCount = 2
+	
+	real timeout = 5
+	
+	construct(unit spawnDummy, player owner)
+		this.spawnDummy = spawnDummy
+		this.pos = spawnDummy.getPos3fake()
+		this.owner = owner
+		pos.z = getTerrainZ(pos.x, pos.y) + 5.
+		spawnTimer = getTimer()
+		spawnDummy.setUserData(this castTo int)
+		
+	static function spawnUnits()
+		let tim = GetExpiredTimer()
+		let data = tim.getData() castTo Spawner
+		if data.spawnDummy.getHP() > .405
+			tim.start(0.5, function spawnMelee).setData(data castTo int)
+			data.spawnCount++
+		else
+			tim.release()
+			destroy data
+		
+	static function spawnMelee()
+		let tim = GetExpiredTimer()
+		let data = tim.getData() castTo Spawner
+		new Creep(data.pos, MELEE_ID, data.owner, data.target.inrangeDummy.getPos())
+		data.meleeCount--
+		if data.meleeCount > 0
+			tim.start(.75, function spawnMelee)
+		else
+			tim.start(.75, function spawnRanged)
+			data.meleeCount = 4
+			
+	static function spawnRanged()
+		let tim = GetExpiredTimer()
+		let data = tim.getData() castTo Spawner
+		new Creep(data.pos, RANGED_ID, data.owner, data.target.inrangeDummy.getPos())
+		data.rangedCount--
+		if data.rangedCount > 0
+			tim.start(.75, function spawnRanged)
+		else
+			tim.start(40., spawnUnitsCall)
+			data.rangedCount = 2
+			
+			
+	ondestroy
+		stop()
+		
+		
+	function start()
+		spawnTimer.start(1., function Spawner.spawnUnits).setData(this castTo int)
+		
+	function stop()
+		spawnTimer.release()
+		spawnTimer = getTimer()
+		
+		
+public function startAllSpawners()
+	color_left_spawn.start()
+	color_right_spawn.start()
+	bw_left_spawn.start()
+	bw_right_spawn.start()
+	
+public function initCreepSpawners()
+	initBWSpawns()
+	initColorSpawns()
+	
+function initBWSpawns()
+	deathTrig.registerUnitEvent(gg_unit_e002_0015, EVENT_UNIT_DEATH)
+	deathTrig.registerUnitEvent(gg_unit_e002_0014, EVENT_UNIT_DEATH)
+	color_left_spawn = new Spawner(gg_unit_e002_0015, TEAM_ONE_CPU)
+	color_left_spawn.target = node_color_left 
+	color_right_spawn = new Spawner(gg_unit_e002_0014, TEAM_ONE_CPU)
+	color_right_spawn.target = node_color_right
+	
+function initColorSpawns()
+	deathTrig.registerUnitEvent(gg_unit_e002_0016, EVENT_UNIT_DEATH)
+	deathTrig.registerUnitEvent(gg_unit_e002_0017, EVENT_UNIT_DEATH)
+	bw_left_spawn = new Spawner(gg_unit_e002_0016, TEAM_TWO_CPU)
+	bw_left_spawn.target = node_bw_left 
+	bw_right_spawn = new Spawner(gg_unit_e002_0017, TEAM_TWO_CPU)
+	bw_right_spawn.target = node_bw_right
+
+trigger deathTrig = CreateTrigger()
+
+function onSpawnDeath()
+	let data = GetTriggerUnit().getUserData() castTo Spawner
+	destroy data
+	
+init
+	deathTrig.addAction(function onSpawnDeath)
+
+	
