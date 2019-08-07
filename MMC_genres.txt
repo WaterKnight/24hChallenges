@@ -1,0 +1,9 @@
+aeon
+arena
+capture the flag
+survival
+escape
+footmen wars
+misc
+rpg/adventure
+tower defense
