@@ -1,0 +1,68 @@
+package Knockback2
+	hashtable data=InitHashtable()
+	
+	class KnockbackWurst
+		static real UPDATE_TIME=0.03125
+		
+		timer t
+		timer durT
+		unit u
+		
+		real speed
+		real acc
+		real ang
+		real duration
+
+		ondestroy
+			RemoveSavedInteger(data, GetHandleId(this.t), 0)
+			RemoveSavedInteger(data, GetHandleId(this.durT), 0)
+			
+			DestroyTimer(this.t)
+			DestroyTimer(this.durT)
+
+		static function endingByTimer()
+			destroy (LoadInteger(data, GetHandleId(GetExpiredTimer()), 0) castTo thistype)
+		
+		function update()
+			this.speed=this.speed-this.acc * UPDATE_TIME
+			
+			SetUnitX(this.u, GetUnitX(this.u) + this.speed * Cos(this.ang) * UPDATE_TIME)
+			SetUnitY(this.u, GetUnitY(this.u) + this.speed * Sin(this.ang) * UPDATE_TIME)
+		
+		static function updateByTimer()
+			(LoadInteger(data, GetHandleId(GetExpiredTimer()), 0) castTo thistype).update()
+		
+		construct(unit u, real speed, real ang, real duration)
+			timer t=CreateTimer()
+			timer durT=CreateTimer()
+			
+			this.t=t
+			this.durT=durT
+			this.u=u
+			
+			this.acc=speed/R2I(duration/UPDATE_TIME)
+			this.speed=speed
+			this.ang=ang
+			this.duration=duration
+			
+			SaveInteger(data, GetHandleId(t), 0, this castTo int)
+			SaveInteger(data, GetHandleId(durT), 0, this castTo int)
+			
+			TimerStart(t, UPDATE_TIME, true, function updateByTimer)
+			TimerStart(durT, duration, false, function endingByTimer)
+
+	trigger dmgTrigger
+	
+	function onDmg()
+		unit source=GetEventDamageSource()
+		unit target=GetTriggerUnit()
+		
+		let k = new KnockbackWurst(target, GetEventDamage()*2, Atan2(GetUnitY(target) - GetUnitY(source), GetUnitX(target) - GetUnitX(source)), 1)
+
+	public function regUnit(unit u)
+		TriggerRegisterUnitEvent(dmgTrigger, u, EVENT_UNIT_DAMAGED)
+		
+	init
+		dmgTrigger=CreateTrigger()
+		TriggerAddAction(dmgTrigger, function onDmg)
+endpackage

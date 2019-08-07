@@ -1,0 +1,469 @@
+package Main
+	import Knockback2
+	
+	force allPlayers
+	force teamLeft
+	force teamRight
+	group heroes
+	int eggId='thle'
+	hashtable data=InitHashtable()
+	
+	int curRed=0
+	int curGreen=0
+	int curBlue=0
+	int curAlpha=0
+
+	unit luna=null
+	rect lunaReturnRect
+	unit eggDropCircle
+	rect eggDropCircleRect
+	location eggDropPoint
+
+	rect tempRect
+
+	function revealRect_enum()
+		fogmodifier f=CreateFogModifierRect(GetEnumPlayer(), FOG_OF_WAR_VISIBLE, tempRect, true, true)
+		FogModifierStart(f)
+		
+	function revealRect(rect whichRect)
+		tempRect=whichRect
+		ForForce(allPlayers, function revealRect_enum)
+
+	function run(code c)
+		trigger t=CreateTrigger()
+		TriggerAddAction(t, c)
+		TriggerExecute(t)
+
+	function dieInWater_enum()
+		real x=GetUnitX(GetEnumUnit())
+		real y=GetUnitY(GetEnumUnit())
+		
+		if GetTerrainCliffLevel(x,y)>0
+			return
+		if IsUnitType(GetEnumUnit(), UNIT_TYPE_DEAD)
+			return
+			
+		KillUnit(GetEnumUnit())
+
+	function dieInWater_timer()
+		ForGroup(heroes, function dieInWater_enum)
+
+	function dieInWater()
+		timer t=CreateTimer()
+		TimerStart(t, 0.25, true, function dieInWater_timer)
+
+	group critters
+	group crittersPassive
+	group selCircles
+
+	unit array playerUnit
+	int array playerUnitId
+
+	trigger suicide_trigger
+
+	function suicide_trig()
+		player p=GetTriggerPlayer()
+		
+		if (playerUnit[GetPlayerId(p)]==null)
+			return
+		
+		KillUnit(playerUnit[GetPlayerId(p)])
+
+	function suicide_addPlayer()
+		TriggerRegisterPlayerChatEvent(suicide_trigger, GetEnumPlayer(), "-suicide", true)
+
+	function suicide()
+		suicide_trigger=CreateTrigger()
+		ForForce(allPlayers, function suicide_addPlayer)
+		TriggerAddAction(suicide_trigger, function suicide_trig)
+
+	function respawnPlayer(player p)
+		rect respawnRect
+		
+		if IsPlayerInForce(p, teamLeft)
+			respawnRect=gg_rct_respawnLeft
+		else
+			respawnRect=gg_rct_respawnRight
+		
+		real x=GetRandomReal(GetRectMinX(respawnRect), GetRectMaxX(respawnRect))
+		real y=GetRandomReal(GetRectMinY(respawnRect), GetRectMaxY(respawnRect))
+		
+		if (playerUnit[GetPlayerId(p)]==null)
+			playerUnit[GetPlayerId(p)] = CreateUnit(p, playerUnitId[GetPlayerId(p)], x, y, 270)
+			GroupAddUnit(heroes, playerUnit[GetPlayerId(p)])
+
+			regUnit(playerUnit[GetPlayerId(p)])
+		else
+			ReviveHero(playerUnit[GetPlayerId(p)], x, y, true)
+		
+		if (GetLocalPlayer()==p)
+			PanCameraTo(x, y)
+
+	function reviveOnDeath_end()
+		player p=LoadPlayerHandle(data, GetHandleId(GetExpiredTimer()), 0)
+		
+		DestroyTimerDialog(LoadTimerDialogHandle(data, GetHandleId(GetExpiredTimer()), 1))
+		
+		DestroyTimer(GetExpiredTimer())
+		
+		respawnPlayer(p)
+
+	function reviveOnDeath_trig()
+		if not IsUnitInGroup(GetTriggerUnit(), heroes)
+			return
+			
+		timer t=CreateTimer()
+		timerdialog td=CreateTimerDialog(t)
+		
+		player p=GetOwningPlayer(GetTriggerUnit())
+		
+		SavePlayerHandle(data, GetHandleId(t), 0, p)
+		SaveTimerDialogHandle(data, GetHandleId(t), 1, td)
+		
+		TimerStart(t, 10., false, function reviveOnDeath_end)
+		
+		TimerDialogSetTitle(td, GetPlayerName(p))
+		TimerDialogDisplay(td, true)
+
+	function reviveOnDeath()
+		trigger t=CreateTrigger()
+		TriggerAddAction(t, function reviveOnDeath_trig)
+		TriggerRegisterAnyUnitEventBJ(t, EVENT_PLAYER_UNIT_DEATH)
+
+	function circle_enter()
+		unit u=GetEnteringUnit()
+
+		if not IsUnitInGroup(u, critters)
+			return
+
+		player p=GetOwningPlayer(u)
+		
+		trigger t=GetTriggeringTrigger()
+		
+		int id=LoadInteger(data, GetHandleId(t), 0)
+		unit ava=LoadUnitHandle(data, GetHandleId(t), 1)
+		
+		DestroyTrigger(t)
+		RemoveUnit(ava)
+
+		GroupRemoveUnit(critters, u)
+		RemoveUnit(u)
+		
+		playerUnit[GetPlayerId(p)]=null
+		playerUnitId[GetPlayerId(p)]=id
+		
+		if CountPlayersInForceBJ(teamRight) < CountPlayersInForceBJ(teamLeft)
+			ForceAddPlayer(teamRight, p)
+		else
+			ForceAddPlayer(teamLeft, p)		
+
+		respawnPlayer(p)
+
+	function selection_addCircle()
+		unit circle=GetEnumUnit()
+		
+		if not (GetUnitTypeId(circle)=='ncp3')
+			GroupRemoveUnit(selCircles, circle)
+			
+			return
+
+		real x=GetUnitX(circle)
+		real y=GetUnitY(circle)
+		
+		rect r=Rect(x-64, y-64, x+64, y+64)
+		
+		trigger t=CreateTrigger()
+		region reg=CreateRegion()
+		RegionAddRect(reg, r)
+		TriggerAddAction(t, function circle_enter)
+		TriggerRegisterEnterRegion(t, reg, null)
+		
+		group g=CreateGroup()
+		GroupEnumUnitsInRect(g, r, null)
+		GroupRemoveUnit(g, circle)
+		
+		unit u=FirstOfGroup(g)
+		SetUnitVertexColor(u, 255, 255, 255, 127)
+		UnitAddAbility(u, 'Aloc')
+
+		int id=GetUnitTypeId(u)
+		
+		SaveInteger(data, GetHandleId(t), 0, id)
+		SaveUnitHandle(data, GetHandleId(t), 1, u)
+
+	function selection_removeSuperfluous()
+		RemoveUnit(GetEnumUnit())
+
+	function selection_addPlayer()
+		unit u=GroupPickRandomUnit(crittersPassive)
+		SetUnitOwner(u, GetEnumPlayer(), true)
+		GroupRemoveUnit(crittersPassive, u)
+		GroupAddUnit(critters, u)
+
+	function initCritters_enum()
+		SetUnitMoveSpeed(GetEnumUnit(), 300)
+
+	function selection()
+		PanCameraTo(GetRectCenterX(gg_rct_selection), GetRectCenterY(gg_rct_selection))
+		
+		revealRect(gg_rct_selection)
+
+		heroes=CreateGroup()
+
+		crittersPassive=CreateGroup()
+		critters=CreateGroup()
+		GroupEnumUnitsInRect(crittersPassive, gg_rct_selectionCritters, null)
+		ForGroup(crittersPassive, function initCritters_enum)
+		
+		ForForce(allPlayers, function selection_addPlayer)
+		ForGroup(crittersPassive, function selection_removeSuperfluous)
+
+		selCircles=CreateGroup()
+		GroupEnumUnitsInRect(selCircles, gg_rct_selection, null)
+		ForGroup(selCircles, function selection_addCircle)
+
+	function setCine(string path, int red, int green, int blue, int alpha, real duration)
+		SetCineFilterStartColor(curRed, curGreen, curBlue, curAlpha)
+		
+		curRed=red
+		curGreen=green
+		curBlue=blue
+		curAlpha=alpha
+		
+		SetCineFilterBlendMode(BLEND_MODE_BLEND)
+		SetCineFilterTexture(path)
+		SetCineFilterEndColor(red, green, blue, alpha)
+		SetCineFilterDuration(duration)
+		DisplayCineFilter(true)
+
+	function sendMsg(unit u, string name, string text, real duration)
+		SetCinematicScene(GetUnitTypeId(u), GetPlayerColor(GetOwningPlayer(u)), name, text, duration+1, duration+1)
+		TriggerSleepAction(duration)
+
+	constant int LUNA_STATE_IDLE=0
+	constant int LUNA_STATE_GO=1
+	constant int LUNA_STATE_GO_BACK=2
+
+	int lunaState
+
+	trigger lunaReturnTrigger=null
+
+	function lunaReturnTrig()
+		if not(GetEnteringUnit()==luna)
+			return
+		
+		lunaState=LUNA_STATE_IDLE
+		ShowUnit(luna, false)
+
+	function goBackLuna()
+		if (lunaReturnTrigger == null)
+			trigger t=CreateTrigger()
+			region r=CreateRegion()
+			RegionAddRect(r, gg_rct_lunaReturnRect)
+			TriggerRegisterEnterRegion(t, r, null)
+			TriggerAddAction(t, function lunaReturnTrig)
+			lunaReturnTrigger=t
+
+		lunaState=LUNA_STATE_GO_BACK
+		
+		IssuePointOrder(luna, "move", GetRectCenterX(gg_rct_lunaReturnRect), GetRectCenterY(gg_rct_lunaReturnRect))
+
+	trigger lunaEggTrigger=null
+	
+	function lunaEggTrig()
+		if not(GetEnteringUnit()==luna)
+			return
+
+		IssueImmediateOrder(luna, "stop")
+		
+		item i=CreateItem(eggId, GetUnitX(eggDropCircle), GetUnitY(eggDropCircle))
+
+		SetItemInvulnerable(i, true)
+		
+		TriggerSleepAction(1)
+		
+		goBackLuna()
+		
+	function goLuna()
+		if (lunaEggTrigger == null)
+			trigger t=CreateTrigger()
+			region r=CreateRegion()
+			RegionAddRect(r, gg_rct_eggDropCircleRect)
+			TriggerRegisterEnterRegion(t, r, null)
+			TriggerAddAction(t, function lunaEggTrig)
+			lunaEggTrigger=t
+		
+		lunaState=LUNA_STATE_GO
+		
+		ShowUnit(luna, true)
+		IssuePointOrder(luna, "move", GetLocationX(eggDropPoint), GetLocationY(eggDropPoint))
+	
+	function lunaCycle_timer()
+		if lunaState==LUNA_STATE_IDLE
+			goLuna()
+			
+			TimerStart(GetExpiredTimer(), 60*5., true, function lunaCycle_timer)
+		else
+			TimerStart(GetExpiredTimer(), 1., true, function lunaCycle_timer)
+	
+	function lunaCycle()
+		UnitAddAbility(luna, 'Agho')
+		SetUnitPathing(luna, false)
+		
+		timer t=CreateTimer()
+		timerdialog td=CreateTimerDialog(t)
+		
+		TimerStart(t, 60*5., true, function lunaCycle_timer)
+		
+		TimerDialogSetTitle(td, "Luna")
+		TimerDialogSetTitleColor(td, 255, 0, 0, 255)
+		TimerDialogDisplay(td, true)
+	
+	function intro()		
+		EnableUserUI(false)
+		
+		setCine("ReplaceableTextures\\CameraMasks\\Black_mask.blp", 255, 255, 255, 255, 0)
+		setCine("ReplaceableTextures\\CameraMasks\\Black_mask.blp", 255, 255, 255, 0, 5)
+		CameraSetupApply( gg_cam_intro, true, true )
+		
+		ShowInterface(false, 0.2)
+		
+		//sendMsg(luna, GetUnitName(luna), "Every year, the turtle Luna pays a visit to Cicada island where she plans to drop off her non-hatched offspring.", 10)
+		//sendMsg(luna, GetUnitName(luna), "Some of her friends are consent to take care of the little ones during her absence.", 7)
+		
+		goLuna()
+		
+		//sendMsg(luna, GetUnitName(luna), "Yet every year, they are discordant who is best suited for the job and therefore get heated up in a race to snarf the eggs to their own place.", 12)
+		
+		TriggerSleepAction(5)
+		
+		ShowInterface(true, 0.2)
+		
+		EnableUserUI(true)
+	
+	trigger powerups_trigger
+	
+	function powerups_addNewItem(int id, real x, real y)
+		item i=CreateItem(id, x, y)
+		SaveItemHandle(data, GetHandleId(i), 0, i)
+		TriggerRegisterDeathEvent(powerups_trigger, i)
+		i=null
+	
+	function powerups_onAcquire()
+		item i=LoadItemHandle(data, GetHandleId(GetTriggerWidget()), 0)
+		int id=GetItemTypeId(i)
+		real x=GetItemX(i)
+		real y=GetItemY(i)
+		
+		RemoveSavedHandle(data, GetHandleId(GetTriggerWidget()), 0)
+		
+		TriggerSleepAction(30)
+
+		powerups_addNewItem(id, x, y)
+	
+	function powerups()
+		powerups_trigger=CreateTrigger()
+		TriggerAddAction(powerups_trigger, function powerups_onAcquire)
+
+		powerups_addNewItem('rspd', GetRectCenterX(gg_rct_runeSpeedLeft), GetRectCenterY(gg_rct_runeSpeedLeft))
+		powerups_addNewItem('rspd', GetRectCenterX(gg_rct_runeSpeedRight), GetRectCenterY(gg_rct_runeSpeedRight))
+	
+	int scoreLeft=0
+	int scoreRight=0
+	
+	function scoreLeft()
+		unit u=GetTriggerUnit()
+
+		if not IsPlayerInForce(GetOwningPlayer(u), teamLeft)
+			return
+
+		if not UnitHasItemOfTypeBJ(u, eggId)
+			return
+
+		int c=0
+		
+		for int i=0 to 5
+			if GetItemTypeId(UnitItemInSlot(u, i))==eggId
+				c++
+		
+		scoreLeft=scoreLeft+c
+	
+		if scoreLeft==5
+			BJDebugMsg("team left wins")
+			PauseGame(true)
+			TriggerSleepAction(5)
+			EndGame(true)
+
+	function scoreRight()
+		unit u=GetTriggerUnit()
+		
+		if not IsPlayerInForce(GetOwningPlayer(u), teamRight)
+			return
+		
+		if not UnitHasItemOfTypeBJ(u, eggId)
+			return
+
+		int c=0
+		
+		for int i=0 to 5
+			if GetItemTypeId(UnitItemInSlot(u, i))==eggId
+				c++
+		
+		scoreRight=scoreRight+c
+	
+		if scoreLeft==5
+			BJDebugMsg("team right wins")
+			PauseGame(true)
+			TriggerSleepAction(5)
+			EndGame(true)
+
+	function eggReturns()
+		trigger t=CreateTrigger()
+		region reg=CreateRegion()
+		RegionAddRect(reg, gg_rct_returnLeft)
+		TriggerAddAction(t, function scoreLeft)
+		TriggerRegisterEnterRegion(t, reg, null)
+
+		t=CreateTrigger()
+		RegionAddRect(reg, gg_rct_returnRight)
+		TriggerAddAction(t, function scoreRight)
+		TriggerRegisterEnterRegion(t, reg, null)
+	
+	function start()
+		TriggerSleepAction(0)
+		
+		allPlayers=CreateForce()
+
+		for int i=0 to 11
+			player p=Player(i)
+			
+			if (GetPlayerSlotState(p)==PLAYER_SLOT_STATE_PLAYING)
+				ForceAddPlayer(allPlayers, p)
+
+		teamLeft=CreateForce()
+		teamRight=CreateForce()
+
+		revealRect(gg_rct_eggRevealedZone)
+
+		lunaReturnRect=gg_rct_lunaReturnRect
+		eggDropCircle=gg_unit_ncp3_0027
+		eggDropPoint=GetUnitLoc(eggDropCircle)
+
+		luna=CreateUnit(Player(0), 'ntrg', GetRectCenterX(lunaReturnRect), GetRectCenterY(lunaReturnRect), 90)
+
+		//intro()
+
+		selection()
+
+		dieInWater()
+		reviveOnDeath()
+		suicide()
+		
+		lunaCycle()
+		powerups()
+		eggReturns()
+
+	init
+		run(function start)
+endpackage
+
